@@ -30,7 +30,11 @@ func start(cfg config.IConfig) {
 	job := make(chan models.TransactionPayload, 10)
 	doneCh := make(chan struct{})
 
-	workerService := services.NewWorkerService(cfg)
+	omiseService, err := services.NewOmiseService(cfg)
+	if err != nil {
+		panic(err)
+	}
+	workerService := services.NewWorkerService(cfg, omiseService)
 	workerAmount := 10
 	for i := 0; i < workerAmount; i++ {
 		go workerService.ConsumePayload(job, doneCh)

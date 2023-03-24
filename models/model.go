@@ -8,10 +8,25 @@ type TransactionPayload struct {
 	Row     int
 }
 
+type InputData struct {
+}
+
+type OmiseCreateTokenParameter struct {
+	Name            string
+	Number          string
+	ExpirationMonth int
+	ExpirationYear  int
+	SecurityCode    string
+}
+
 type OmiseChargeParameter struct {
 	Amount   int
 	Currency string
 	Card     string
+}
+
+type OmiseCreateTokenResponse struct {
+	omise.Card
 }
 
 type OmiseChargeResponse struct {

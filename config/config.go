@@ -4,11 +4,13 @@ import "os"
 
 type IConfig interface {
 	OmiseBaseAPI() string
+	OmiseCurrency() string
 	OmisePublicKey() string
 	OmiseSecretKey() string
 }
 
 type config struct {
+	omiseCurrency  string
 	omisePublicKey string
 	omiseSecretKey string
 	omiseBaseAPI   string
@@ -23,6 +25,13 @@ func (c *config) OmiseBaseAPI() string {
 		c.omiseBaseAPI = os.Getenv("OMISE_BASE_API")
 	}
 	return c.omiseBaseAPI
+}
+
+func (c *config) OmiseCurrency() string {
+	if len(c.omiseCurrency) == 0 {
+		c.omiseCurrency = os.Getenv("OMISE_CURRENCY")
+	}
+	return c.omiseCurrency
 }
 
 func (c *config) OmisePublicKey() string {
