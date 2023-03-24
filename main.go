@@ -4,18 +4,13 @@ import (
 	"encoding/csv"
 	"fmt"
 	"go-tamboon/cipher"
+	"go-tamboon/config"
+	"go-tamboon/models"
+	"go-tamboon/services"
 	"io"
 	"os"
 	"runtime"
 )
-
-type transactionPayload struct {
-	headers []string
-	data    []string
-	row     int
-}
-
-var doneCh = make(chan struct{})
 
 func main() {
 
@@ -26,16 +21,19 @@ func main() {
 	// 	}
 	// }()
 
-	start()
+	config := config.NewConfig()
+	start(config)
 }
 
-func start() {
+func start(cfg config.IConfig) {
 	// make chan
-	job := make(chan transactionPayload, 10)
+	job := make(chan models.TransactionPayload, 10)
+	doneCh := make(chan struct{})
 
+	workerService := services.NewWorkerService(cfg)
 	workerAmount := 10
 	for i := 0; i < workerAmount; i++ {
-		go consumeAndCharge(job)
+		go workerService.ConsumePayload(job, doneCh)
 	}
 
 	tmpFile, err := os.CreateTemp("", "tempFile.csv")
@@ -48,19 +46,7 @@ func start() {
 
 	filePath := "data/fng.1000.csv.rot128"
 	decryptFileAndWriteToFile(filePath, tmpFile)
-	readAndProduceTransactionData(tmpFile, job)
-}
-
-func consumeAndCharge(ch <-chan transactionPayload) {
-selectLoop:
-	for {
-		select {
-		case payload := <-ch:
-			fmt.Printf("%v\n", payload)
-		case <-doneCh:
-			break selectLoop
-		}
-	}
+	readAndProduceTransactionData(tmpFile, job, doneCh)
 }
 
 func decryptFileAndWriteToFile(filePath string, writeFile *os.File) error {
@@ -96,7 +82,7 @@ func decryptFileAndWriteToFile(filePath string, writeFile *os.File) error {
 	return nil
 }
 
-func readAndProduceTransactionData(tmpFile *os.File, ch chan<- transactionPayload) error {
+func readAndProduceTransactionData(tmpFile *os.File, ch chan<- models.TransactionPayload, doneCh chan<- struct{}) error {
 	tmpFile.Seek(0, 0)
 	csvReader := csv.NewReader(tmpFile)
 	rowAmount := 0
@@ -123,14 +109,15 @@ func readAndProduceTransactionData(tmpFile *os.File, ch chan<- transactionPayloa
 		// fmt.Printf("%+v\n", row)
 
 		// produce data to channel
-		ch <- transactionPayload{
-			headers: headers,
-			data:    row,
-			row:     rowAmount,
+		// TODO: check channel is available
+		ch <- models.TransactionPayload{
+			Headers: headers,
+			Data:    row,
+			Row:     rowAmount,
 		}
 	}
 
-	doneCh <- struct{}{}
+	defer func() { doneCh <- struct{}{} }()
 
 	fmt.Printf("Total row: %d\n", rowAmount)
 
