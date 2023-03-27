@@ -46,3 +46,14 @@ type OmiseChargeResponse struct {
 	// PaidAt         time.Time `json:"paid_at"`
 	// ExpiresAt      time.Time `json:"expires_at"`
 }
+
+type OmiseError struct {
+	Location   string `json:"location"`
+	StatusCode int    `json:"status"`
+	Code       string `json:"code"`
+	Message    string `json:"message"`
+}
+
+func (err *OmiseError) Error() string
+
+func (err *OmiseError) String() string

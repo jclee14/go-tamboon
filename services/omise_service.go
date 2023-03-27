@@ -54,9 +54,13 @@ func (s *omiseService) CreateCharge(data models.OmiseChargeParameter) (*models.O
 	}
 	chargeResult := &models.OmiseChargeResponse{}
 
-	err := s.omiseClient.Do(chargeResult, chargeData)
-	if err != nil {
+	if err := s.omiseClient.Do(chargeResult, chargeData); err != nil {
 		return nil, err
+		// if omiseErr, ok := err.(*models.OmiseError); ok {
+		// 	log.Fatal(omiseErr.Code + " " + omiseErr.Message)
+		// } else {
+		// 	return nil, err
+		// }
 	}
 
 	return chargeResult, nil
